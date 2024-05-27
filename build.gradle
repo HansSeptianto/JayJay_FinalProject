@@ -1,0 +1,96 @@
+plugins {
+    id 'java'
+}
+
+group = 'org.example'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation group: 'org.junit.vintage', name: 'junit-vintage-engine', version: '5.11.0-M1'
+    implementation group: 'org.seleniumhq.selenium', name: 'selenium-java', version: '4.20.0'
+    implementation group: 'io.github.bonigarcia', name: 'webdrivermanager', version: '5.8.0'
+
+    implementation group: 'io.cucumber', name: 'cucumber-java', version: '7.17.0'
+    testImplementation group: 'io.cucumber', name: 'cucumber-junit', version: '7.17.0'
+
+    testImplementation group: 'io.rest-assured', name: 'rest-assured', version: '5.4.0'
+    implementation group: 'org.json', name: 'json', version: '20240303'
+    testImplementation group: 'io.rest-assured', name: 'json-path', version: '5.4.0'
+    implementation group: 'io.rest-assured', name: 'json-schema-validator', version: '5.4.0'
+    testImplementation group: 'org.assertj', name: 'assertj-core', version: '3.25.3'
+}
+
+//test {
+//    useJUnitPlatform()
+//}
+
+configurations {
+    cucumberRuntime {
+        extendsFrom testImplementation
+    }
+}
+
+def tags = (findProperty('tags') == null) ? 'not @exclude' : findProperty('tags') + ' and not @exclude'
+
+task cucumber(){
+    description("Running Cucumber Test")
+    dependsOn assemble, compileTestJava
+    doLast {
+        javaexec {
+            main = "io.cucumber.core.cli.Main"
+            classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
+            args = [
+                    '--plugin', 'html:reports/index.html',
+                    '--plugin', 'json:reports/cucumber.json',
+                    '--plugin', 'pretty',
+                    '--glue', 'hans',
+                    '--tags', "${tags}",
+                    'src/test/resources'
+            ]
+        }
+    }
+}
+
+task cucumberApiTests() {
+    description = "Run Cucumber tests with tag @api"
+    dependsOn assemble, compileTestJava
+    doLast {
+        javaexec {
+            main = "io.cucumber.core.cli.Main"
+            classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
+            args = [
+                    '--plugin', 'html:reports/api-tests.html',
+                    '--plugin', 'json:reports/api-tests.json',
+                    '--plugin', 'pretty',
+                    '--glue', 'hans',
+                    '--tags', '@api',
+                    'src/test/resources'
+            ]
+        }
+    }
+}
+
+task cucumberWebTests() {
+    description = "Run Cucumber tests with tag @web"
+    dependsOn assemble, compileTestJava
+    doLast {
+        javaexec {
+            main = "io.cucumber.core.cli.Main"
+            classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
+            args = [
+                    '--plugin', 'html:reports/web-tests.html',
+                    '--plugin', 'json:reports/web-tests.json',
+                    '--plugin', 'pretty',
+                    '--glue', 'hans',
+                    '--tags', '@web',
+                    'src/test/resources'
+            ]
+        }
+    }
+}
